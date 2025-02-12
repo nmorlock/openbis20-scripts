@@ -54,11 +54,12 @@ public class SEEKConnector {
   private final List<String> ASSET_TYPES = new ArrayList<>(Arrays.asList("data_files", "models",
       "sops", "documents", "publications"));
 
-  public SEEKConnector(String seekURL, byte[] httpCredentials, String openBISBaseURL,
+  public SEEKConnector(String seekUser, String seekURL, byte[] httpCredentials, String openBISBaseURL,
       String defaultProjectTitle) throws URISyntaxException, IOException,
       InterruptedException, ParserConfigurationException, SAXException {
     this.apiURL = seekURL;
     this.credentials = httpCredentials;
+    testCredentials(seekUser);
     Optional<String> projectID = getProjectWithTitle(defaultProjectTitle);
     if (projectID.isEmpty()) {
       throw new RuntimeException("Failed to find project with title: " + defaultProjectTitle + ". "
@@ -66,6 +67,31 @@ public class SEEKConnector {
     }
     DEFAULT_PROJECT_ID = projectID.get();
     translator = new OpenbisSeekTranslator(openBISBaseURL, DEFAULT_PROJECT_ID);
+  }
+
+  public void testCredentials(String seekUser) throws URISyntaxException, IOException, InterruptedException {
+    // Using an endpoint which only logged-in users have access to
+    String endpoint = apiURL + "/people/current";
+    HttpRequest request = HttpRequest.newBuilder()
+            .uri(new URI(endpoint))
+            .headers("Content-Type", "application/json")
+            .headers("Accept", "application/json")
+            .headers("Authorization", "Basic " + new String(credentials)) // Base64-encoded username:password
+            .GET()
+            .build();
+
+    HttpResponse<String> response = HttpClient.newBuilder()
+            .build()
+            .send(request, BodyHandlers.ofString());
+
+    if (response.statusCode() == 404) {
+      LOG.error("SEEK login failed: Invalid username or password.");
+      System.err.println("❌ Error: Login to SEEK failed. Please check your username and password.");
+      System.exit(1);
+    } else if (response.statusCode() != 200) {
+      throw new RuntimeException("❌ Error: Failed to verify SEEK login-credentials. HTTP error: " + response.statusCode());
+    }
+    LOG.info("✅ Successfully logged to in to SEEK as: " + seekUser );
   }
 
   public void setDefaultInvestigation(String investigationTitle)
