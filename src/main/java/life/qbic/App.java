@@ -79,6 +79,12 @@ public class App {
   private static OpenBIS tryLogin(OpenBIS authentication, String user, char[] password) {
     try {
       authentication.login(user, new String(password));
+      if (authentication.getSessionToken() == null) {
+        LOG.error("❌ Login failed: Invalid username or password.");
+        System.err.println("❌ Error: Login failed. Please check your username and password.");
+        System.exit(1);
+      }
+      LOG.info("✅ Successfully logged to in to OpenBIS as: " + user);
     } catch (ConnectionException e) {
       LOG.error(e.getMessage(), e);
       LOG.error("Could not connect to QBiC's data source. Have you requested access to the "
