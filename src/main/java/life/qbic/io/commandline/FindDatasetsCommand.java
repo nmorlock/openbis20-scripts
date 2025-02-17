@@ -7,6 +7,13 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.person.Person;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 
 import java.text.SimpleDateFormat;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -15,12 +22,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import life.qbic.App;
+import life.qbic.model.Configuration;
+import life.qbic.model.download.FileSystemWriter;
+import life.qbic.model.download.SummaryWriter;
 import life.qbic.model.DatasetWithProperties;
 import life.qbic.model.download.OpenbisConnector;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+
+
 
 /**
  * List Data
@@ -95,6 +107,8 @@ public class FindDatasetsCommand implements Runnable {
         objectCodesShortened.add(code);
       }
 
+      List<String> summary = new ArrayList<>();
+
       for (String code : objectCodesShortened) {
         List<DataSet> datasetsOfExp = openbis.listDatasetsOfExperiment(spaces, code).stream()
         .sorted(Comparator.comparing(
@@ -102,9 +116,9 @@ public class FindDatasetsCommand implements Runnable {
         .collect(Collectors.toList());
 
         if (!datasetsOfExp.isEmpty()) {
-          System.out.printf("Found %s datasets for experiment %s:%n", datasetsOfExp.size(), code);
+            summary.add(String.format("Found %s datasets for experiment %s:", datasetsOfExp.size(), code));
           datasets.addAll(datasetsOfExp);
-          printDataset(datasetsOfExp, openbis);
+          summary = getDetailsOfDataset(datasetsOfExp, openbis, summary);
         }
 
         List<DataSet> datasetsOfSample = openbis.listDatasetsOfSample(spaces, code).stream()
@@ -113,18 +127,22 @@ public class FindDatasetsCommand implements Runnable {
         .collect(Collectors.toList());
 
         if (!datasetsOfSample.isEmpty()) {
-          System.out.printf("Found %s datasets for sample %s:%n", datasetsOfSample.size(), code);
+          summary.add(String.format("Found %s datasets of sample %s:", datasetsOfSample.size(), code));
           datasets.addAll(datasetsOfSample);
-          printDataset(datasetsOfSample, openbis);
+          summary = getDetailsOfDataset(datasetsOfSample, openbis, summary);
         }
       }
+      for(String s : summary) {
+        System.out.println(s);
+      }
+      saveSummary(summary);      
   }
 
   /**
- * Print Dataset
- * Gets the properties of the given dataset and prints them.
+ * Get Details of Dataset
+ * Gets the properties of the given dataset and adds them to the summary.
  */
-  private void printDataset(List<DataSet> datasets, OpenbisConnector openbis) {
+  private List<String> getDetailsOfDataset(List<DataSet> datasets, OpenbisConnector openbis, List<String> summary) {
     Map<String, String> properties = new HashMap<>();
       if (!datasets.isEmpty()) {
         Set<String> patientIDs = openbis.findPropertiesInSampleHierarchy("PATIENT_DKFZ_ID",
@@ -145,18 +163,39 @@ public class FindDatasetsCommand implements Runnable {
       int datasetIndex = 0;
       for (DatasetWithProperties dataSet : datasetWithProperties) {
         datasetIndex++;
-        System.out.println("[" + datasetIndex + "]");
+        summary.add("[" + datasetIndex + "]");
         for (String key : dataSet.getProperties().keySet()) {
-          System.out.println(key + ": " + properties.get(key));
+          summary.add(key + ": " + properties.get(key));
         }
-        System.out.printf("ID: %s (%s)%n", dataSet.getCode(), dataSet.getExperiment().getIdentifier());
-        System.out.println("Type: " + dataSet.getType().getCode());
+        summary.add(String.format("ID: %s (%s)", dataSet.getCode(), dataSet.getExperiment().getIdentifier()));
+        summary.add("Type: " + dataSet.getType().getCode());
         Person person = dataSet.getRegistrator();
         String simpleTime = new SimpleDateFormat("MM-dd-yy HH:mm:ss").format(dataSet.getRegistrationDate());
         String name = person.getFirstName() + " " + person.getLastName();
         String uploadedBy = "Uploaded by " + name + " (" + simpleTime + ")";
-        System.out.println(uploadedBy);
-        System.out.println();
+        summary.add(uploadedBy);
+        summary.add("");
       }
+      return summary;
+  }
+
+  /**
+  * Saves the Summary to File
+  * Saves the summary in the log-Folder as txt-file.
+  */
+  private void saveSummary(List<String> summary) {
+    Path outputPath = Paths.get(Configuration.LOG_PATH.toString(), "find_datasets_summary" + getTimeStamp() + ".txt");
+    SummaryWriter summaryWriter = new FileSystemWriter(outputPath);
+    try {
+      summaryWriter.reportSummary(summary);
+    } catch (IOException e) {
+      throw new RuntimeException("Could not write summary file.");
+    }
+  }
+
+  private String getTimeStamp() {
+    final String PATTERN_FORMAT = "YYYY-MM-dd_HHmmss";
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT);
+    return LocalDateTime.ofInstant(Instant.now(), ZoneOffset.UTC).format(formatter);
   }
 }
