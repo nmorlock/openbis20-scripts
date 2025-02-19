@@ -52,7 +52,7 @@ public class TransferSampleTypesToSeekCommand implements Runnable {
         throw new RuntimeException("a default project must be provided via config "+
             "('seek_default_project') or parameter.");
       }
-      seek = new SEEKConnector(seekAuth.getSeekURL(), httpCredentials, openbisAuth.getOpenbisBaseURL(),
+      seek = new SEEKConnector(seekAuth.getSeekUser(), seekAuth.getSeekURL(), httpCredentials, openbisAuth.getOpenbisBaseURL(),
           App.configProperties.get("seek_default_project"));
       translator = seek.getTranslator();
     } catch (URISyntaxException | IOException | InterruptedException |
