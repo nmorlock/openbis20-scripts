@@ -26,7 +26,7 @@
 		<seek_type>DateTime</seek_type>
 	</entry>
 	<entry type="BOOLEAN">
-		<seek_id>16</seek_id>
+		<seek_id>10</seek_id>
 		<seek_title>Boolean</seek_title>
 		<seek_type>Boolean</seek_type>
 	</entry>
