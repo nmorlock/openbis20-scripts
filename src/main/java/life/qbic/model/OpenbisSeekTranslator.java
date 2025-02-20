@@ -12,8 +12,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -68,69 +70,6 @@ public class OpenbisSeekTranslator {
     this.openBISBaseURL = openbisBaseURL;
     this.DEFAULT_PROJECT_ID = null;
     parseConfigs();
-  }
-
-  //Used for translation to RO-Crate, without SEEK connection
-  public SeekStructure translateForRO(OpenbisExperimentWithDescendants experiment,
-      Set<String> blacklist, boolean transferData) throws URISyntaxException {
-
-    Experiment exp = experiment.getExperiment();
-    String expType = exp.getType().getCode();
-    String title = exp.getCode()+" ("+exp.getPermId().getPermId()+")";
-    String assayType = experimentTypeToAssayType.get(expType);
-
-    if(assayType ==null || assayType.isBlank()) {
-      throw new RuntimeException("Could not find assay type for " + expType+". A mapping needs to "
-          + "be added to the respective properties file.");
-    }
-    ISAAssay assay = new ISAAssay(title, "-1", experimentTypeToAssayClass.get(expType),
-        new URI(assayType));
-
-    SeekStructure result = new SeekStructure(assay, exp.getIdentifier().getIdentifier());
-
-    for(Sample sample : experiment.getSamples()) {
-      SampleType sampleType = sample.getType();
-
-      //try to put all attributes into sample properties, as they should be a 1:1 mapping
-      Map<String, String> typeCodesToNames = new HashMap<>();
-      Set<String> propertiesLinkingSamples = new HashSet<>();
-      for (PropertyAssignment a : sampleType.getPropertyAssignments()) {
-        String code = a.getPropertyType().getCode();
-        String label = a.getPropertyType().getLabel();
-        DataType type = a.getPropertyType().getDataType();
-        typeCodesToNames.put(code, label);
-        if(type.equals(DataType.SAMPLE)) {
-          propertiesLinkingSamples.add(code);
-        }
-      }
-      Map<String, Object> attributes = new HashMap<>();
-      for(String code : sample.getProperties().keySet()) {
-        String value = sample.getProperty(code);
-        if(propertiesLinkingSamples.contains(code)) {
-          value = generateOpenBISLinkFromPermID("SAMPLE", value);
-        }
-        attributes.put(typeCodesToNames.get(code), value);
-      }
-
-      String sampleID = sample.getIdentifier().getIdentifier();
-      attributes.put(App.configProperties.get("seek_openbis_sample_title"), sampleID);
-      ISASample isaSample = new ISASample(sample.getIdentifier().getIdentifier(), attributes,
-          "-1", Collections.singletonList(DEFAULT_PROJECT_ID));
-      result.addSample(isaSample, sampleID);
-    }
-
-    //create ISA files for assets. If actual data is to be uploaded is determined later based on flag
-    for(DatasetWithProperties dataset : experiment.getDatasets()) {
-      String permID = dataset.getCode();
-      if(!blacklist.contains(permID)) {
-        for(DataSetFile file : experiment.getFilesForDataset(permID)) {
-          String datasetType = getDatasetTypeOfFile(file, experiment.getDatasets());
-          datasetFileToSeekAsset(file, datasetType, transferData)
-              .ifPresent(seekAsset -> result.addAsset(seekAsset, file));
-        }
-      }
-    }
-    return result;
   }
 
   /**
@@ -228,8 +167,10 @@ public class OpenbisSeekTranslator {
   }
 
   public SeekStructure translate(OpenbisExperimentWithDescendants experiment,
-      Map<String, String> sampleTypesToIds, Set<String> blacklist, boolean transferData)
-      throws URISyntaxException {
+                                 Map<String, String> sampleTypesToIds,
+                                 Set<String> blacklist,
+                                 boolean transferData,
+                                 boolean translateForRO) throws URISyntaxException {
 
     Experiment exp = experiment.getExperiment();
     String expType = exp.getType().getCode();
@@ -271,9 +212,20 @@ public class OpenbisSeekTranslator {
 
       String sampleID = sample.getIdentifier().getIdentifier();
       attributes.put(App.configProperties.get("seek_openbis_sample_title"), sampleID);
-      String sampleTypeId = sampleTypesToIds.get(sampleType.getCode());
-      ISASample isaSample = new ISASample(sample.getIdentifier().getIdentifier(), attributes,
-          sampleTypeId, Collections.singletonList(DEFAULT_PROJECT_ID));
+
+      Date registrationDate = sample.getRegistrationDate();
+      SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+      String formattedDate = dateFormat.format(registrationDate);
+      attributes.put(App.configProperties.get("seek_openbis_registration_date"), formattedDate);
+
+      String sampleTypeId = translateForRO ? "-1" : sampleTypesToIds.get(sampleType.getCode());
+
+      ISASample isaSample = new ISASample(
+              sample.getIdentifier().getIdentifier(),
+              attributes,
+              sampleTypeId,
+              Collections.singletonList(DEFAULT_PROJECT_ID));
+
       result.addSample(isaSample, sampleID);
     }
 
