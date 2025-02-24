@@ -24,8 +24,8 @@ public class ISASampleType extends AbstractISAObject {
   private Relationships relationships;
   private final String ISA_TYPE = "sample_types";
 
-  public ISASampleType(String title, SampleAttribute titleAttribute, String projectID) {
-    this.attributes = new Attributes(title, titleAttribute);
+  public ISASampleType(String title, SampleAttribute titleAttribute, SampleAttribute registrationDateAttribute, String projectID) {
+    this.attributes = new Attributes(title, titleAttribute, registrationDateAttribute);
     this.relationships = new Relationships(Arrays.asList(projectID));
   }
 
@@ -118,12 +118,13 @@ public class ISASampleType extends AbstractISAObject {
     private String title;
     private List<SampleAttribute> sampleAttributes = new ArrayList<>();;
 
-    public Attributes(String title, SampleAttribute titleAttribute) {
+    public Attributes(String title, SampleAttribute titleAttribute, SampleAttribute registrationDateAttribute) {
       this.title = title;
       if(!titleAttribute.isTitle) {
         throw new IllegalArgumentException("The first sample attribute must be the title attribute.");
       }
       this.sampleAttributes.add(titleAttribute);
+      this.sampleAttributes.add(registrationDateAttribute);
     }
 
     public void addSampleAttribute(String title, SampleAttributeType sampleAttributeType,

@@ -144,9 +144,17 @@ public class OpenbisSeekTranslator {
   public ISASampleType translate(SampleType sampleType) {
     SampleAttribute titleAttribute = new SampleAttribute(
         App.configProperties.get("seek_openbis_sample_title"),
-        dataTypeToAttributeType.get(DataType.VARCHAR), true, false);
-    ISASampleType type = new ISASampleType(sampleType.getCode(), titleAttribute,
-        DEFAULT_PROJECT_ID);
+        dataTypeToAttributeType.get(DataType.VARCHAR),
+            true,
+            false
+    );
+    SampleAttribute registrationDateAttribute = new SampleAttribute(
+            App.configProperties.get("seek_openbis_registration_date"),
+            dataTypeToAttributeType.get(DataType.DATE),
+            false,
+            false
+    );
+    ISASampleType type = new ISASampleType(sampleType.getCode(), titleAttribute, registrationDateAttribute, DEFAULT_PROJECT_ID);
     for (PropertyAssignment a : sampleType.getPropertyAssignments()) {
       DataType dataType = a.getPropertyType().getDataType();
       type.addSampleAttribute(a.getPropertyType().getLabel(), dataTypeToAttributeType.get(dataType),

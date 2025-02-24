@@ -197,12 +197,13 @@ to be provided, as well.
 * seek_default_investigation=default_investigation
 
 In order to keep track of samples transferred from openBIS, the script will try to transfer the 
-openBIS identifier of each sample to an additional SEEK sample type attribute (more details in the 
+openBIS identifier and registration date of each sample to an additional SEEK sample type attribute (more details in the 
 section **Transferring Sample Types to SEEK**).
 
-**Its name can be specified in the config:**
+**Its name and date can be specified in the config:**
 
 * seek_openbis_sample_title=openBIS Name
+* seek_openbis_registration_date=openBIS Registration Date
 
 In order to create certain objects in SEEK, user-provided mappings need to be provided via property
 files placed in the same folder as the .jar. These are:
@@ -259,9 +260,11 @@ For example:
 
 When transferring openBIS sample types, the command will automatically add a mandatory title 
 attribute to the sample type in SEEK. This title will be filled with the identifier of the openBIS 
-**sample object** (not sample type!) will be added. The attribute name is specified in the config 
-file and should selected before sample types are transferred to the respective instance:
+**sample object** (not sample type!) will be added. In addition to this a openBIS Registration Date attribute
+will also be automatically transferred. The attribute name and registration date is specified in 
+the config file and should be selected before sample types are transferred to the respective instance:
 * seek_openbis_sample_title=openBIS Name
+* seek_openbis_registration_date=openBIS Registration Date
 
 By default, only sample types (not samples!) with names not already found in SEEK will be 
 transferred and the user will be informed if duplicates are found. The option **--ignore-existing** 
