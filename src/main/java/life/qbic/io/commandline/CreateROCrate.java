@@ -123,7 +123,12 @@ public class CreateROCrate implements Runnable {
     Set<String> blacklist = parseBlackList(blacklistFile);
     System.out.println("Translating openBIS structure to ISA structure...");
     try {
-      SeekStructure nodeWithChildren = translator.translateForRO(structure, blacklist, transferData);
+      SeekStructure nodeWithChildren = translator.translate(
+              structure,
+              null,
+              blacklist,
+              transferData,
+              true);
       String experimentID = nodeWithChildren.getAssayWithOpenBISReference().getRight();
       ISAAssay assay = nodeWithChildren.getAssayWithOpenBISReference().getLeft();
       String assayFileName = openbisIDToFileName(experimentID);

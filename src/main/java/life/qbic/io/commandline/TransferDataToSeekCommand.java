@@ -174,8 +174,12 @@ public class TransferDataToSeekCommand implements Runnable {
     System.out.println("Translating openBIS property codes to SEEK names...");
     Map<String, String> sampleTypesToIds = seek.getSampleTypeNamesToIDs();
     System.out.println("Creating SEEK structure...");
-    SeekStructure nodeWithChildren = translator.translate(experiment, sampleTypesToIds, blacklist,
-        transferData);
+    SeekStructure nodeWithChildren = translator.translate(
+            experiment,
+            sampleTypesToIds,
+            blacklist,
+            transferData,
+            false);
     if (!noUpdate) {
       System.out.println("Trying to find existing corresponding assay in SEEK...");
       Optional<String> assayID = getAssayIDForOpenBISExperiment(experiment.getExperiment());
