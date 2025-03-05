@@ -48,10 +48,14 @@ public class CreateROCrate implements Runnable {
   private String objectID;
   @Parameters(arity = "1", paramLabel = "ro-path", description = "Path to the output folder")
   private String roPath;
-  @Option(names = "--blacklist", description = "Path to file specifying by dataset "
+  @Option(names = "--blacklist", description = "Path to file specifying by "
       + "dataset code which openBIS datasets not to transfer to SEEK. The file must contain one code "
       + "per line.")
   private String blacklistFile;
+  @Option(names = "--sample-blacklist", description = "Path to file specifying by "
+          + "sample code which openBIS sample not to transfer to SEEK. The file must contain one code "
+          + "per line.")
+  private String sampleBlacklistFile;
   @Option(names = {"-d", "--data"}, description =
       "Transfers the data itself to SEEK along with the metadata. "
           + "Otherwise only the link(s) to the openBIS object will be created in SEEK.")
@@ -67,10 +71,8 @@ public class CreateROCrate implements Runnable {
     System.out.printf("Transfer openBIS -> RO-crate started.%n");
     System.out.printf("Provided openBIS object: %s%n", objectID);
     System.out.printf("Pack datasets into crate? %s%n", transferData);
-    if(blacklistFile!=null && !blacklistFile.isBlank()) {
-      System.out.printf("File with datasets codes that won't be transferred: %s%n", blacklistFile);
-    }
-
+    printBlacklistFile("File with datasets codes that won't be transferred", blacklistFile);
+    printBlacklistFile("File with sample codes that won't be transferred", sampleBlacklistFile);
     System.out.println("Connecting to openBIS...");
 
     OpenBIS authentication = App.loginToOpenBIS(openbisAuth.getOpenbisPassword(),
@@ -120,13 +122,15 @@ public class CreateROCrate implements Runnable {
       default:
         throw new RuntimeException("Handling of node type " + nodeType + " is not supported.");
     }
-    Set<String> blacklist = parseBlackList(blacklistFile);
+    Set<String> blacklist = parseBlackList(blacklistFile, false);
+    Set<String> sampleBlacklist = parseBlackList(sampleBlacklistFile, true);
     System.out.println("Translating openBIS structure to ISA structure...");
     try {
       SeekStructure nodeWithChildren = translator.translate(
               structure,
               null,
               blacklist,
+              sampleBlacklist,
               transferData,
               true);
       String experimentID = nodeWithChildren.getAssayWithOpenBISReference().getRight();
@@ -189,6 +193,12 @@ public class CreateROCrate implements Runnable {
     System.out.println("Done");
   }
 
+  private void printBlacklistFile(String label, String file) {
+    if (file != null && !file.isBlank()) {
+      System.out.printf("%s: %s%n", label, file);
+    }
+  }
+
   private String openbisIDToFileName(String id) {
     id = id.replace("/","_");
     if(id.startsWith("_")) {
@@ -204,7 +214,7 @@ public class CreateROCrate implements Runnable {
     file.close();
   }
 
-  private Set<String> parseBlackList(String blacklistFile) {
+  private Set<String> parseBlackList(String blacklistFile, boolean sample) {
     if(blacklistFile == null) {
       return new HashSet<>();
     }
@@ -215,12 +225,15 @@ public class CreateROCrate implements Runnable {
 
       Set<String> codes = lines.collect(Collectors.toSet());
 
-      for(String code : codes) {
-        if(!OpenbisConnector.datasetCodePattern.matcher(code).matches()) {
-          throw new RuntimeException("Invalid dataset code: " + code+". Please make sure to use valid"
-              + " dataset codes in the blacklist file.");
+      if (!sample) {
+        for(String code : codes) {
+          if(!OpenbisConnector.datasetCodePattern.matcher(code).matches()) {
+            throw new RuntimeException("Invalid dataset code: " + code+". Please make sure to use valid"
+                    + " dataset codes in the blacklist file.");
+          }
         }
       }
+
       return codes;
     } catch (IOException e) {
       throw new RuntimeException(blacklistFile+" could not be found or read.");
