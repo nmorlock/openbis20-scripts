@@ -291,8 +291,14 @@ option.
 Info in the created asset(s) always links back to the openBIS path of the respective dataset. 
 The data itself can be transferred and stored in SEEK using the '-d' flag.
 
-To completely exclude some dataset information from being transferred, a file ('--blacklist') 
-containing dataset codes (from openBIS) can be specified. //TODO do this for samples/sample types
+To completely exclude some dataset codes from being transferred, a file ('--blacklist')
+containing the dataset codes (from openBIS) can be specified.
+
+To completely exclude some sample types from being transferred, a file ('--sampletype-blacklist')
+containing the sample type codes (from openBIS) can be specified.
+
+To completely exclude some samples from being transferred, a file ('--sample-blacklist')
+containing the sample codes (from openBIS) can be specified.
 
 In order to store links to the newly created SEEK objects in the source openBIS instance, the 
 following sample type is needed:
@@ -364,8 +370,14 @@ sample, depending on where the dataset was attached in openBIS.
 Info in the created asset .jsons always links back to the openBIS path of the respective dataset.
 The data itself can be downloaded into the structure using the '-d' flag.
 
-To completely exclude some dataset information from being transferred, a file ('--blacklist')
-containing dataset codes (from openBIS) can be specified. //TODO do this for samples/sample types
+To completely exclude some dataset codes from being transferred, a file ('--blacklist')
+containing the dataset codes (from openBIS) can be specified.
+
+To completely exclude some sample types from being transferred, a file ('--sampletype-blacklist')
+containing the sample type codes (from openBIS) can be specified.
+
+To completely exclude some samples from being transferred, a file ('--sample-blacklist')
+containing the sample codes (from openBIS) can be specified.
 
 **Example command:**
 

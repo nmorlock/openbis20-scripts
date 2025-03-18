@@ -55,10 +55,14 @@ public class TransferDataToSeekCommand implements Runnable {
   @Option(names = "--seek-project", description = "Title of the project in SEEK where nodes should"
       + "be added. Can alternatively be provided via the config file as 'seek_default_project'.")
   private String projectTitle;
-  @Option(names = "--blacklist", description = "Path to file specifying by dataset "
+  @Option(names = "--blacklist", description = "Path to file specifying by "
       + "dataset code which openBIS datasets not to transfer to SEEK. The file must contain one code "
       + "per line.")
   private String blacklistFile;
+  @Option(names = "--sample-blacklist", description = "Path to file specifying by "
+          + "sample code which openBIS sample not to transfer to SEEK. The file must contain one code "
+          + "per line.")
+  private String sampleBlacklistFile;
   @Option(names = "--no-update", description = "Use to specify that existing "
       + "information in SEEK for the specified openBIS input should not be updated, but new nodes "
       + "created.")
@@ -90,9 +94,8 @@ public class TransferDataToSeekCommand implements Runnable {
     }
     System.out.printf("Transfer datasets to SEEK? %s%n", transferData);
     System.out.printf("Update existing nodes if found? %s%n", !noUpdate);
-    if(blacklistFile!=null && !blacklistFile.isBlank()) {
-      System.out.printf("File with datasets codes that won't be transferred: %s%n", blacklistFile);
-    }
+    printBlacklistFile("File with datasets codes that won't be transferred", blacklistFile);
+    printBlacklistFile("File with sample codes that won't be transferred", sampleBlacklistFile);
 
     System.out.println("Connecting to openBIS...");
 
@@ -167,10 +170,17 @@ public class TransferDataToSeekCommand implements Runnable {
     System.out.println("Done");
   }
 
+  private void printBlacklistFile(String label, String file) {
+    if (file != null && !file.isBlank()) {
+      System.out.printf("%s: %s%n", label, file);
+    }
+  }
+
   private SeekStructurePostRegistrationInformation handleExperimentTransfer(
       OpenbisExperimentWithDescendants experiment, NodeType nodeType)
       throws URISyntaxException, IOException, InterruptedException {
-    Set<String> blacklist = parseBlackList(blacklistFile);
+    Set<String> blacklist = parseBlackList(blacklistFile, false);
+    Set<String> sampleBlacklist = parseBlackList(sampleBlacklistFile, true);
     System.out.println("Translating openBIS property codes to SEEK names...");
     Map<String, String> sampleTypesToIds = seek.getSampleTypeNamesToIDs();
     System.out.println("Creating SEEK structure...");
@@ -178,6 +188,7 @@ public class TransferDataToSeekCommand implements Runnable {
             experiment,
             sampleTypesToIds,
             blacklist,
+            sampleBlacklist,
             transferData,
             false);
     if (!noUpdate) {
@@ -280,7 +291,7 @@ public class TransferDataToSeekCommand implements Runnable {
 
    */
 
-  private Set<String> parseBlackList(String blacklistFile) {
+  private Set<String> parseBlackList(String blacklistFile, boolean sample) {
     if(blacklistFile == null) {
       return new HashSet<>();
     }
@@ -291,12 +302,15 @@ public class TransferDataToSeekCommand implements Runnable {
 
       Set<String> codes = lines.collect(Collectors.toSet());
 
-      for(String code : codes) {
-        if(!OpenbisConnector.datasetCodePattern.matcher(code).matches()) {
-          throw new RuntimeException("Invalid dataset code: " + code+". Please make sure to use valid"
-              + " dataset codes in the blacklist file.");
+      if (!sample) {
+        for(String code : codes) {
+          if(!OpenbisConnector.datasetCodePattern.matcher(code).matches()) {
+            throw new RuntimeException("Invalid dataset code: " + code+". Please make sure to use valid"
+                    + " dataset codes in the blacklist file.");
+          }
         }
       }
+
       return codes;
     } catch (IOException e) {
       throw new RuntimeException(blacklistFile+" could not be found or read.");

@@ -177,6 +177,7 @@ public class OpenbisSeekTranslator {
   public SeekStructure translate(OpenbisExperimentWithDescendants experiment,
                                  Map<String, String> sampleTypesToIds,
                                  Set<String> blacklist,
+                                 Set<String> sampleBlacklist,
                                  boolean transferData,
                                  boolean translateForRO) throws URISyntaxException {
 
@@ -195,6 +196,12 @@ public class OpenbisSeekTranslator {
     SeekStructure result = new SeekStructure(assay, exp.getIdentifier().getIdentifier());
 
     for(Sample sample : experiment.getSamples()) {
+      String sampleCode = sample.getCode();
+      if (sampleBlacklist.contains(sampleCode)) {
+        System.out.println("Skipping blacklisted sample: " + sampleCode);
+        continue;
+      }
+
       SampleType sampleType = sample.getType();
 
       //try to put all attributes into sample properties, as they should be a 1:1 mapping
