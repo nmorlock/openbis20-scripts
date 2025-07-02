@@ -91,7 +91,7 @@ public class TransferSampleTypesToSeekCommand implements Runnable {
                   + "sample type using the same name, you can use the --ignore-existing flag.");
         } else {
           String sampleTypeId = seek.createSampleType(translator.translate(type));
-          System.out.println("created "+sampleTypeId);
+          System.out.println("Created SEEK sample_type Id "+sampleTypeId);
         }
       }
     } catch (URISyntaxException | IOException | InterruptedException e) {
