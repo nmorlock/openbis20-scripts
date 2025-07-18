@@ -201,6 +201,10 @@ public class OpenbisSeekTranslator {
         System.out.println("Skipping blacklisted sample: " + sampleCode);
         continue;
       }
+      else if (sampleCode.startsWith("EX_LINK_")) {
+        System.out.println("Skipping External Link sample: " + sampleCode);
+        continue;
+      }
 
       SampleType sampleType = sample.getType();
 
