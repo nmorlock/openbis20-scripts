@@ -29,9 +29,9 @@ public class ISASampleType extends AbstractISAObject {
     this.relationships = new Relationships(Arrays.asList(projectID));
   }
 
-  public void addSampleAttribute(String title, SampleAttributeType sampleAttributeType,
+  public void addSampleAttribute(String title, SampleAttributeType sampleAttributeType, String description,
       boolean required, String linkedSampleTypeIdOrNull) {
-    attributes.addSampleAttribute(title, sampleAttributeType, required, linkedSampleTypeIdOrNull);
+    attributes.addSampleAttribute(title, sampleAttributeType, description, required, linkedSampleTypeIdOrNull);
   }
 
   public ISASampleType withAssays(List<String> assays) {
@@ -127,10 +127,8 @@ public class ISASampleType extends AbstractISAObject {
       this.sampleAttributes.add(registrationDateAttribute);
     }
 
-    public void addSampleAttribute(String title, SampleAttributeType sampleAttributeType,
-        boolean required, String linkedSampleTypeIdOrNull) {
-      SampleAttribute sampleAttribute = new SampleAttribute(title, sampleAttributeType, false,
-          required).withLinkedSampleTypeId(linkedSampleTypeIdOrNull);
+    public void addSampleAttribute(String title, SampleAttributeType sampleAttributeType, String description, boolean required, String linkedSampleTypeIdOrNull) {
+      SampleAttribute sampleAttribute = new SampleAttribute(title, sampleAttributeType, description, false, required).withLinkedSampleTypeId(linkedSampleTypeIdOrNull);
       sampleAttributes.add(sampleAttribute);
     }
 
@@ -152,12 +150,12 @@ public class ISASampleType extends AbstractISAObject {
     private boolean required;
     private String linkedSampleTypeId;
 
-    public SampleAttribute(String title, SampleAttributeType sampleAttributeType, boolean isTitle,
-        boolean required) {
+    public SampleAttribute(String title, SampleAttributeType sampleAttributeType, String description, boolean isTitle, boolean required) {
       this.title = title;
       this.isTitle = isTitle;
       this.required = required;
       this.sampleAttributeType = sampleAttributeType;
+      this.description = description;
     }
 
     public SampleAttribute withDescription(String description) {
@@ -199,11 +197,13 @@ public class ISASampleType extends AbstractISAObject {
     private String id;
     private String title;
     private String baseType;
+    private String description;
 
-    public SampleAttributeType(String id, String title, String baseType) {
+    public SampleAttributeType(String id, String title, String baseType, String description) {
       this.id = id;
       this.title = title;
       this.baseType = baseType;
+      this.description = description;
     }
 
     public String getBase_type() {
@@ -217,6 +217,9 @@ public class ISASampleType extends AbstractISAObject {
     public String getTitle() {
       return title;
     }
+    public String getDescription() {
+      return description;
+    }
 
     @Override
     public String toString() {
@@ -224,6 +227,7 @@ public class ISASampleType extends AbstractISAObject {
           "id='" + id + '\'' +
           ", title='" + title + '\'' +
           ", baseType='" + baseType + '\'' +
+          ", description='" + description + '\'' +
           '}';
     }
   }

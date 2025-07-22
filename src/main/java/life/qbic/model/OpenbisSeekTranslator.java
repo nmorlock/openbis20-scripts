@@ -5,6 +5,7 @@ import static java.util.Map.entry;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.Experiment;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.DataType;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.PropertyAssignment;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.PropertyType;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.SampleType;
 import ch.ethz.sis.openbis.generic.dssapi.v3.dto.datasetfile.DataSetFile;
@@ -99,7 +100,7 @@ public class OpenbisSeekTranslator {
           .getNamedItem("type")
           .getNodeValue());
       NodeList nodes = node.getChildNodes();
-      String seekId = "", seekTitle = "", seekBaseType = "";
+      String seekId = "", seekTitle = "", seekBaseType = "", seekDescription = "";
       for (int j = 0; j < nodes.getLength(); j++) {
         Node n = nodes.item(j);
         if (n.getNodeName().equals("seek_id")) {
@@ -111,8 +112,11 @@ public class OpenbisSeekTranslator {
         if (n.getNodeName().equals("seek_title")) {
           seekTitle = n.getTextContent();
         }
+        if (n.getNodeName().equals("seek_description")) {
+          seekDescription = n.getTextContent();
+        }
       }
-      result.put(openbisType, new SampleAttributeType(seekId, seekTitle, seekBaseType));
+      result.put(openbisType, new SampleAttributeType(seekId, seekTitle, seekBaseType, seekDescription));
     }
     return result;
   }
@@ -145,20 +149,27 @@ public class OpenbisSeekTranslator {
     SampleAttribute titleAttribute = new SampleAttribute(
         App.configProperties.get("seek_openbis_sample_title"),
         dataTypeToAttributeType.get(DataType.VARCHAR),
+            "openBIS Name",
             true,
             false
     );
     SampleAttribute registrationDateAttribute = new SampleAttribute(
             App.configProperties.get("seek_openbis_registration_date"),
             dataTypeToAttributeType.get(DataType.DATE),
+            "openBIS Registration Date",
             false,
             false
     );
+
     ISASampleType type = new ISASampleType(sampleType.getCode(), titleAttribute, registrationDateAttribute, DEFAULT_PROJECT_ID);
     for (PropertyAssignment a : sampleType.getPropertyAssignments()) {
-      DataType dataType = a.getPropertyType().getDataType();
-      type.addSampleAttribute(a.getPropertyType().getLabel(), dataTypeToAttributeType.get(dataType),
-          false, null);
+      PropertyType propertyType = a.getPropertyType();
+      String label = propertyType.getLabel();
+      DataType dataType = propertyType.getDataType();
+      SampleAttributeType sampleAttributeType = dataTypeToAttributeType.get(dataType);
+      String description = propertyType.getDescription();
+
+      type.addSampleAttribute(label, sampleAttributeType, description,false, null);
     }
     return type;
   }

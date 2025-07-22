@@ -38,6 +38,10 @@ public class TransferSampleTypesToSeekCommand implements Runnable {
           + "sampletype code which openBIS sampletype not to transfer to SEEK. The file must contain one code "
           + "per line.")
   private String blacklistFile;
+  @Option(names = "--materials-sampletype", description = "Path to file specifying by sampletype "
+          + "sampletype code which openBIS sampletype not to transfer to SEEK. The file must contain one code "
+          + "per line.")
+  private boolean materialsSampleType;
   OpenbisConnector openbis;
   SEEKConnector seek;
   OpenbisSeekTranslator translator;
@@ -78,8 +82,16 @@ public class TransferSampleTypesToSeekCommand implements Runnable {
 
     SampleTypesAndMaterials types = openbis.getSampleTypesWithMaterials();
 
+    Set<SampleType> sampleTypes;
+    if (materialsSampleType) {
+      sampleTypes = types.getSamplesAsMaterials();
+    }
+    else {
+      sampleTypes = types.getSampleTypes();
+    }
+
     try {
-      for(SampleType type : types.getSampleTypes()) {
+      for(SampleType type : sampleTypes) {
         String sampleTypeCode = type.getCode();
         if (blacklistedSampleTypes.contains(sampleTypeCode)) {
           System.out.println("Skipping blacklisted sample type: " + sampleTypeCode);
