@@ -28,6 +28,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import life.qbic.App;
 import life.qbic.io.PropertyReader;
+import life.qbic.model.download.SEEKConnector;
 import life.qbic.model.isa.GenericSeekAsset;
 import life.qbic.model.isa.ISAAssay;
 import life.qbic.model.isa.ISASample;
@@ -50,11 +51,13 @@ public class OpenbisSeekTranslator {
   private Map<DataType, SampleAttributeType> dataTypeToAttributeType;
   private Map<String, String> datasetTypeToAssetType;
   private Map<String, String> experimentTypeToAssayType;
+  private final SEEKConnector seek;
 
-  public OpenbisSeekTranslator(String openBISBaseURL, String defaultProjectID)
+  public OpenbisSeekTranslator(String openBISBaseURL, String defaultProjectID, SEEKConnector seek)
       throws IOException, ParserConfigurationException, SAXException {
     this.openBISBaseURL = openBISBaseURL;
     this.DEFAULT_PROJECT_ID = defaultProjectID;
+    this.seek = seek;
     parseConfigs();
     if(!App.configProperties.containsKey("seek_openbis_sample_title")) {
       throw new RuntimeException("Script can not be run, since 'seek_openbis_sample_title' was not "
@@ -66,10 +69,11 @@ public class OpenbisSeekTranslator {
    * Used for translation to RO-Crate, without SEEK connection
    * @param openbisBaseURL
    */
-  public OpenbisSeekTranslator(String openbisBaseURL)
+  public OpenbisSeekTranslator(String openbisBaseURL, SEEKConnector seek)
       throws IOException, ParserConfigurationException, SAXException {
     this.openBISBaseURL = openbisBaseURL;
     this.DEFAULT_PROJECT_ID = null;
+    this.seek = seek;
     parseConfigs();
   }
 
@@ -145,7 +149,7 @@ public class OpenbisSeekTranslator {
       entry("txt", "http://edamontology.org/format_2330")
       );
 
-  public ISASampleType translate(SampleType sampleType) {
+  public ISASampleType translate(SampleType sampleType, List<SEEKConnector.SeekVocabulary> controlledVocabs) {
     SampleAttribute titleAttribute = new SampleAttribute(
         App.configProperties.get("seek_openbis_sample_title"),
         dataTypeToAttributeType.get(DataType.VARCHAR),
@@ -164,14 +168,41 @@ public class OpenbisSeekTranslator {
     ISASampleType type = new ISASampleType(sampleType.getCode(), titleAttribute, registrationDateAttribute, DEFAULT_PROJECT_ID);
     for (PropertyAssignment a : sampleType.getPropertyAssignments()) {
       PropertyType propertyType = a.getPropertyType();
-      String label = propertyType.getLabel();
+//      if (propertyType.getCode().equals("CULTURE_PROPERTY") || propertyType.getCode().equals("ORGANISM")) {
+//        continue;
+//      }
       DataType dataType = propertyType.getDataType();
       SampleAttributeType sampleAttributeType = dataTypeToAttributeType.get(dataType);
+      String label = propertyType.getLabel();
       String description = propertyType.getDescription();
 
-      type.addSampleAttribute(label, sampleAttributeType, description,false, null);
+      if (dataType == DataType.CONTROLLEDVOCABULARY) {
+        String vocabCode = propertyType.getCode();
+        SEEKConnector.SeekVocabulary seekVocab = findControlledVocabularyByTitle(vocabCode, controlledVocabs);
+        if (seekVocab != null) {
+          type.addSampleAttribute(label, sampleAttributeType, description, false, null, seekVocab.getId());
+          continue;
+        } else {
+          throw new IllegalArgumentException("SEEK vocabulary not found for code: " + vocabCode + "\n You will have to transfer it first.");
+        }
+      }
+
+      type.addSampleAttribute(label, sampleAttributeType, description,false, null, null);
     }
     return type;
+  }
+
+  public SEEKConnector.SeekVocabulary findControlledVocabularyByTitle(String title, List<SEEKConnector.SeekVocabulary> controlledVocabs) {
+    try {
+      for (SEEKConnector.SeekVocabulary vocab : controlledVocabs) {
+        if (vocab.getTitle().equalsIgnoreCase(title)) {
+          return vocab;
+        }
+      }
+    } catch (Exception e) {
+      throw new RuntimeException("Error looking up vocabulary", e);
+    }
+    return null;
   }
 
   public String assetForDatasetType(String datasetType) {

@@ -31,9 +31,9 @@
 		<seek_type>Boolean</seek_type>
 	</entry>
 	<entry type="CONTROLLEDVOCABULARY">
-		<seek_id>8</seek_id>
-		<seek_title>String</seek_title>
-		<seek_type>String</seek_type>
+		<seek_id>13</seek_id>
+		<seek_title>Controlled Vocabulary</seek_title>
+		<seek_type>CV</seek_type>
 	</entry>
 	<entry type="MATERIAL">
 		<seek_id>8</seek_id>

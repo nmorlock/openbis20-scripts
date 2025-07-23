@@ -29,9 +29,8 @@ public class ISASampleType extends AbstractISAObject {
     this.relationships = new Relationships(Arrays.asList(projectID));
   }
 
-  public void addSampleAttribute(String title, SampleAttributeType sampleAttributeType, String description,
-      boolean required, String linkedSampleTypeIdOrNull) {
-    attributes.addSampleAttribute(title, sampleAttributeType, description, required, linkedSampleTypeIdOrNull);
+  public void addSampleAttribute(String title, SampleAttributeType sampleAttributeType, String description, boolean required, String linkedSampleTypeIdOrNull, String controlledVocabIdOrNull) {
+    attributes.addSampleAttribute(title, sampleAttributeType, description, required, linkedSampleTypeIdOrNull, controlledVocabIdOrNull);
   }
 
   public ISASampleType withAssays(List<String> assays) {
@@ -127,8 +126,8 @@ public class ISASampleType extends AbstractISAObject {
       this.sampleAttributes.add(registrationDateAttribute);
     }
 
-    public void addSampleAttribute(String title, SampleAttributeType sampleAttributeType, String description, boolean required, String linkedSampleTypeIdOrNull) {
-      SampleAttribute sampleAttribute = new SampleAttribute(title, sampleAttributeType, description, false, required).withLinkedSampleTypeId(linkedSampleTypeIdOrNull);
+    public void addSampleAttribute(String title, SampleAttributeType sampleAttributeType, String description, boolean required, String linkedSampleTypeIdOrNull, String controlledVocabIdOrNull) {
+      SampleAttribute sampleAttribute = new SampleAttribute(title, sampleAttributeType, description, false, required).withLinkedSampleTypeId(linkedSampleTypeIdOrNull).withSampleControlledVocabId(controlledVocabIdOrNull);
       sampleAttributes.add(sampleAttribute);
     }
 
@@ -149,6 +148,7 @@ public class ISASampleType extends AbstractISAObject {
     private boolean isTitle;
     private boolean required;
     private String linkedSampleTypeId;
+    private String sampleControlledVocabId;
 
     public SampleAttribute(String title, SampleAttributeType sampleAttributeType, String description, boolean isTitle, boolean required) {
       this.title = title;
@@ -167,6 +167,10 @@ public class ISASampleType extends AbstractISAObject {
       this.linkedSampleTypeId = linkedSampleTypeId;
       return this;
     }
+    public SampleAttribute withSampleControlledVocabId(String sampleControlledVocabId) {
+      this.sampleControlledVocabId = sampleControlledVocabId;
+      return this;
+    }
 
     public SampleAttributeType getSample_attribute_type() {
       return sampleAttributeType;
@@ -174,6 +178,10 @@ public class ISASampleType extends AbstractISAObject {
 
     public String getLinked_sample_type_id() {
       return linkedSampleTypeId;
+    }
+
+    public String getSample_controlled_vocab_id() {
+      return sampleControlledVocabId;
     }
 
     public String getTitle() {

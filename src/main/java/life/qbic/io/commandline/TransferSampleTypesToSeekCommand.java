@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -92,6 +93,7 @@ public class TransferSampleTypesToSeekCommand implements Runnable {
 
     try {
       for(SampleType type : sampleTypes) {
+        List<SEEKConnector.SeekVocabulary> controlledVocab = seek.getAllControlledVocabularies();
         String sampleTypeCode = type.getCode();
         if (blacklistedSampleTypes.contains(sampleTypeCode)) {
           System.out.println("Skipping blacklisted sample type: " + sampleTypeCode);
@@ -102,7 +104,7 @@ public class TransferSampleTypesToSeekCommand implements Runnable {
           System.err.println(sampleTypeCode + " is already in SEEK. If you want to create a new "
                   + "sample type using the same name, you can use the --ignore-existing flag.");
         } else {
-          String sampleTypeId = seek.createSampleType(translator.translate(type));
+          String sampleTypeId = seek.createSampleType(translator.translate(type, controlledVocab));
           System.out.println("Created SEEK sample_type Id "+sampleTypeId);
         }
       }

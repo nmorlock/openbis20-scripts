@@ -23,6 +23,7 @@ import life.qbic.model.DatasetWithProperties;
 import life.qbic.model.OpenbisExperimentWithDescendants;
 import life.qbic.model.OpenbisSeekTranslator;
 import life.qbic.model.download.OpenbisConnector;
+import life.qbic.model.download.SEEKConnector;
 import life.qbic.model.isa.GenericSeekAsset;
 import life.qbic.model.isa.ISAAssay;
 import life.qbic.model.isa.ISASample;
@@ -64,6 +65,7 @@ public class CreateROCrate implements Runnable {
   OpenbisAuthenticationOptions openbisAuth = new OpenbisAuthenticationOptions();
   OpenbisConnector openbis;
   OpenbisSeekTranslator translator;
+  SEEKConnector seek;
 
   @Override
   public void run() {
@@ -103,7 +105,7 @@ public class CreateROCrate implements Runnable {
     System.out.println("Search successful.");
 
     try {
-      translator = new OpenbisSeekTranslator(openbisAuth.getOpenbisBaseURL());
+      translator = new OpenbisSeekTranslator(openbisAuth.getOpenbisBaseURL(), seek);
     } catch (IOException | ParserConfigurationException | SAXException e) {
       throw new RuntimeException(e);
     }

@@ -66,7 +66,7 @@ public class SEEKConnector {
           + "Please provide an existing default project.");
     }
     DEFAULT_PROJECT_ID = projectID.get();
-    translator = new OpenbisSeekTranslator(openBISBaseURL, DEFAULT_PROJECT_ID);
+    translator = new OpenbisSeekTranslator(openBISBaseURL, DEFAULT_PROJECT_ID, this);
   }
 
   public void testCredentials(String seekUser) throws URISyntaxException, IOException, InterruptedException {
@@ -1048,5 +1048,58 @@ public class SEEKConnector {
       return datasetIDsWithEndpoints;
     }
 
+  }
+
+  public static class SeekVocabulary {
+    private String id;
+    private String title;
+
+    public SeekVocabulary(String id, String title) {
+      this.id = id;
+      this.title = title;
+    }
+
+    public String getId() { return id; }
+    public String getTitle() { return title; }
+  }
+
+  public List<SeekVocabulary> getAllControlledVocabularies() throws IOException, InterruptedException, URISyntaxException {
+    String endpoint = apiURL + "/sample_controlled_vocabs";
+    HttpRequest request = HttpRequest.newBuilder()
+            .uri(new URI(endpoint))
+            .headers(
+                    "Content-Type",
+                    "application/json",
+                    "Accept",
+                    "application/json",
+                    "Authorization",
+                    "Basic " + new String(credentials)
+            )
+            .GET()
+            .build();
+
+    HttpResponse<String> response = HttpClient.newBuilder().build()
+            .send(request, HttpResponse.BodyHandlers.ofString());
+
+    if (response.statusCode() != 200) {
+      throw new RuntimeException("Failed to fetch controlled vocabularies. HTTP code: " + response.statusCode());
+    }
+
+    List<SeekVocabulary> vocabularies = new ArrayList<>();
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode root = mapper.readTree(response.body());
+    JsonNode data = root.get("data");
+
+    if (data != null && data.isArray()) {
+      for (JsonNode item : data) {
+        String id = item.get("id").asText();
+        String title = item.get("attributes").get("title").asText();
+
+        SeekVocabulary vocab = new SeekVocabulary(id, title);
+        vocabularies.add(vocab);
+      }
+    }
+
+    return vocabularies;
   }
 }
